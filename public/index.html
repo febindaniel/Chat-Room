@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full-Featured Chat Room App</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body data-theme="light">
+    <!-- Theme and Sound Controls -->
+    <div id="appControls" class="app-controls">
+        <button id="themeToggle" class="control-btn" title="Toggle Dark Mode">🌙</button>
+        <button id="soundToggle" class="control-btn" title="Toggle Sound">🔊</button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="copyToast" class="toast hidden">
+        <span class="toast-message">Room code copied to clipboard!</span>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="container">
+            <div class="login-card card">
+                <div class="card__body">
+                    <h1 class="app-title">🚀 Chat Room App</h1>
+                    <p class="app-subtitle">Connect with others in real-time chat rooms</p>
+                    <div class="button-group">
+                        <button id="createRoomBtn" class="btn btn--primary btn--lg btn--full-width">
+                            🏠 Create Chat Room
+                        </button>
+                        <button id="joinRoomBtn" class="btn btn--outline btn--lg btn--full-width">
+                            🚪 Join Chat Room
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Create Room Screen -->
+    <div id="createRoomScreen" class="screen">
+        <div class="container">
+            <div class="form-card card">
+                <div class="card__body">
+                    <h2>🏠 Create New Chat Room</h2>
+                    <p class="form-subtitle">Enter your username to create a new chat room</p>
+
+                    <form id="createRoomForm">
+                        <div class="form-group">
+                            <label class="form-label" for="createUsername">👤 Your Username</label>
+                            <input type="text" id="createUsername" class="form-control" 
+                                   placeholder="Enter your username" required maxlength="50">
+                        </div>
+
+                        <div class="button-group">
+                            <button type="submit" class="btn btn--primary btn--lg btn--full-width">
+                                ✨ Create Room
+                            </button>
+                            <button type="button" id="backToLoginFromCreate" 
+                                    class="btn btn--outline btn--lg btn--full-width">
+                                ⬅️ Back to Login
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="createRoomError" class="error-message hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Created Screen -->
+    <div id="roomCreatedScreen" class="screen">
+        <div class="container">
+            <div class="success-card card">
+                <div class="card__body">
+                    <div class="success-icon">🎉</div>
+                    <h2>Room Created Successfully!</h2>
+                    <p class="success-subtitle">Share this code with others to join your chat room</p>
+
+                    <div class="room-code-display">
+                        <span id="generatedRoomCode" class="room-code">123456</span>
+                        <button id="copyRoomCodeBtn" class="btn btn--outline btn--sm" title="Copy Room Code">
+                            📋 Copy Code
+                        </button>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="enterChatBtn" class="btn btn--primary btn--lg btn--full-width">
+                            💬 Enter Chat Room
+                        </button>
+                        <button id="backToLoginFromCreated" 
+                                class="btn btn--outline btn--lg btn--full-width">
+                            ⬅️ Back to Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Room Screen -->
+    <div id="joinRoomScreen" class="screen">
+        <div class="container">
+            <div class="form-card card">
+                <div class="card__body">
+                    <h2>🚪 Join Chat Room</h2>
+                    <p class="form-subtitle">Enter the room code and your username to join</p>
+
+                    <form id="joinRoomForm">
+                        <div class="form-group">
+                            <label class="form-label" for="joinUsername">👤 Your Username</label>
+                            <input type="text" id="joinUsername" class="form-control" 
+                                   placeholder="Enter your username" required maxlength="50">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="roomCodeInput">🔢 Room Code</label>
+                            <input type="text" id="roomCodeInput" class="form-control" 
+                                   placeholder="Enter 6-digit room code" maxlength="6" required>
+                        </div>
+
+                        <div class="button-group">
+                            <button type="submit" class="btn btn--primary btn--lg btn--full-width">
+                                🚀 Join Room
+                            </button>
+                            <button type="button" id="backToLoginFromJoin" 
+                                    class="btn btn--outline btn--lg btn--full-width">
+                                ⬅️ Back to Login
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="joinRoomError" class="error-message hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chatScreen" class="screen">
+        <div class="chat-container">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <h3 id="chatRoomTitle">🏠 Room: <span id="chatRoomCode">123456</span></h3>
+                    <p id="chatUserInfo">Welcome, <span id="chatUsername">User</span></p>
+                </div>
+                <div class="chat-header-actions">
+                    <button id="copyRoomCodeInChat" class="btn btn--sm btn--outline" title="Copy Room Code">
+                        📋 Copy Code
+                    </button>
+                    <button id="leaveChatBtn" class="btn btn--sm btn--danger">
+                        🚪 Leave Room
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Body -->
+            <div class="chat-body">
+                <div class="main-chat">
+                    <!-- Messages Area -->
+                    <div class="messages-container" id="messagesContainer">
+                        <!-- Messages will be dynamically inserted here -->
+                    </div>
+
+                    <!-- Typing Indicator -->
+                    <div id="typingIndicator" class="typing-indicator hidden">
+                        <div class="typing-animation">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                        <span id="typingText">Someone is typing...</span>
+                    </div>
+
+                    <!-- Message Input Area -->
+                    <div class="message-input-area">
+                        <input type="file" id="fileInput" class="hidden" 
+                               accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mov">
+                        <div class="input-container">
+                            <button id="attachFileBtn" class="btn btn--icon" title="Attach File">📎</button>
+                            <input type="text" id="messageInput" class="message-input" 
+                                   placeholder="Type your message..." maxlength="2000">
+                            <button id="sendMessageBtn" class="btn btn--primary btn--icon" title="Send Message">➤</button>
+                        </div>
+                        <div id="filePreview" class="file-preview hidden">
+                            <div class="file-preview-content">
+                                <span id="fileName">No file selected</span>
+                                <button id="removeFileBtn" class="btn btn--sm btn--danger">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Sidebar -->
+                <div class="users-sidebar" id="usersSidebar">
+                    <div class="sidebar-header">
+                        <h4>👥 Active Users (<span id="activeUsersCount">0</span>)</h4>
+                        <button id="toggleSidebar" class="btn btn--icon" title="Toggle Sidebar">←</button>
+                    </div>
+                    <div class="users-list" id="usersList">
+                        <!-- Users will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Context Menu -->
+    <div id="messageContextMenu" class="context-menu hidden">
+        <button id="editMessageBtn" class="context-menu-item">✏️ Edit Message</button>
+        <button id="deleteMessageBtn" class="context-menu-item">🗑️ Delete Message</button>
+    </div>
+
+    <!-- Reaction Picker -->
+    <div id="reactionPicker" class="reaction-picker hidden">
+        <button class="reaction-btn" data-reaction="👍">👍</button>
+        <button class="reaction-btn" data-reaction="❤️">❤️</button>
+        <button class="reaction-btn" data-reaction="😂">😂</button>
+        <button class="reaction-btn" data-reaction="😮">😮</button>
+        <button class="reaction-btn" data-reaction="😢">😢</button>
+        <button class="reaction-btn" data-reaction="😠">😠</button>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <h3>🗑️ Delete Message</h3>
+            <p>Are you sure you want to delete this message? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button id="confirmDeleteBtn" class="btn btn--danger">Delete</button>
+                <button id="cancelDeleteBtn" class="btn btn--outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Preview Modal -->
+    <div id="mediaModal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-content--media">
+            <button id="closeMediaModal" class="btn btn--icon modal-close">✕</button>
+            <div id="mediaPreview" class="media-preview">
+                <!-- Media content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p id="loadingText">Connecting...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
